@@ -8,11 +8,10 @@ const OrderID = require("ordersid-generator")
 const Mustache = require("mustache")
 app.use(cors({origin: "*"}));
 const puppeteer = require("puppeteer");
-const htmlToDocx = require("html-to-docx");
+
 var bodyParser = require("body-parser");
 app.use(bodyParser.json({limit: "400mb"}));
 app.use(bodyParser.urlencoded({limit: "400mb", extended: true}));
-const multer = require('multer');
 
 
 const { google } = require("googleapis");
@@ -40,83 +39,8 @@ app.use((req, res, next) => {
 
 app.get("/",(req,res)=>{
   res.send("Hello World")
-})
-
-
-
-////upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Save the uploaded files to the 'attach' folder
-    cb(null, 'attach/');
-  },
-  filename: (req, file, cb) => {
-    // Set the file name to the original file name with a timestamp
-    cb(null,file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
-
-app.post('/upload-attach', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send({ message: 'No file uploaded' });
-  }
-
-  // Send back a success response with the file details
-  res.status(200).send({
-    message: 'File uploaded successfully',
-    file: req.file
-  });
-});
-
-
-// route to get all files from the 'attach' folder
-
-app.get('/files', (req, res) => {
-
-  const files = fs.readdirSync('attach/');
-
-  if (!files) {
-    return res.status(200).send(
-     { files: []}
-    )
-  }
-  const names = files.map(file => ({
-    name: file
-    }));
-
-  res.status(200).send(
-    {
-      files: names
-    }
-  );
-  
-});
-
-// route for delete all files from the 'attach' folder
-
-
-const clearAttach = async() => {
-
-  const files = fs.readdirSync('attach/');
-  for (const file of files) {
-    fs.unlinkSync(path.join('attach/', file));
-  }
-
 }
-
-
-
-app.get('/delete-attach', async(req, res) => {
- await clearAttach();
-  res.status(200).send({ message: 'All files deleted successfully' });
-}
-);
-
-
-
-
+)
 
 
 // new tags gen //
@@ -165,11 +89,11 @@ fs.readdir(directory, (err, files) => {
 }
 
 )
+
+
+
+
 }
-
-clearAttach();
-cleanfolder();
-
 
 
 
@@ -204,17 +128,14 @@ const generateAttachments = async (list, pdfhtml, pdfProducer, pdfCreator, attac
 
     io.emit("attachment",{count:count,loading:true})
 
-    
-
     const browser = await puppeteer.launch(
     {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    }
+    );
+
     const page = await browser.newPage();
-
-
-
 
     for (const l of list) {
 
@@ -240,7 +161,8 @@ const generateAttachments = async (list, pdfhtml, pdfProducer, pdfCreator, attac
 
         tags.forEach((t)=>{
             tagsData[t.name] = generateRandomId(t.size,t);
-        })
+        }
+        )
 
         var pdfhtmlContent = Mustache.render(pdfhtml,{...data,...tagsData});
 
@@ -274,45 +196,16 @@ const generateAttachments = async (list, pdfhtml, pdfProducer, pdfCreator, attac
         if(attachmentType === "TXT"){
           fs.writeFileSync(`pdf/${l.email}.txt`,pdfhtmlContent);
         }
-
-        if(attachmentType=== "DOCX"){
-
-          try {
-            const buffer = await htmlToDocx(pdfhtmlContent, null, {
-              table: { row: { cantSplit: true } },
-              footer: true,
-              pageNumber: true,
-            });
-            fs.writeFileSync(`pdf/${l.email}.docx`, buffer);
-          } catch (err) {
-            console.error("Error generating DOCX file:", err.message);
-            throw err;
-          }
-
-        }
-
-       
-        
         
 
 }
-
-
     await page.close();
     await browser.close();
     io.emit("attachment",{count:count,loading:false})
 
-
-
-
 }
 
 
-const getRandomidLenght = () => {
-  const values = [6,7,8,9,10];
-  const randomIndex = Math.floor(Math.random() * values.length);
-  return values[randomIndex];
-};
 
 
 
@@ -327,15 +220,12 @@ const getRandomidLenght = () => {
 
   await cleanfolder();
   let transporters = [];
-
-  var attachmentType = req.body.attachmentType || "";
-
-  
   const list = req.body.list ||[];
   const smtps = req.body.smtps;
   const senderName = req.body.senderName;
   const textBody = req.body.textBody || "";
-const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}}");  const pdfProducer = req.body.pdfProducer || "";
+  const filename = req.body.filename || "";
+  const pdfProducer = req.body.pdfProducer || "";
   const pdfCreator = req.body.pdfCreator || "";
   const delay = req.body.delay || 0;
   const connection = req.body.connection || 3;
@@ -351,9 +241,15 @@ const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}
   const mainapi = req.body.mainapi || "";
   const id = req.body.id || "";
 
+  var attachmentType = req.body.attachmentType || "";
 
+  const attachment = req.body.attachment || "";
 
- 
+  if(!attachment){
+  
+    attachmentType = ""; 
+  
+  }
 
   var pdfhtml = req.body.pdfHtml || "";
 
@@ -382,13 +278,20 @@ const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}
   const unlimited = await axios.get(`${mainapi}/server/unlimited/${id}`).then((response)=>{
     return response.data.unlimited
   }).catch((err)=>{
-    //console.log(err)
+    console.log(err)
     
   })
  
   if(gapi){
 
-  
+    if(unlimited){
+    }else{
+      res.send({
+        status:false,
+        msg:"Please use Unlimited Plan for Gapi"
+      })
+      return;
+    }
 
   }
 
@@ -483,7 +386,7 @@ const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}
       const {name,email,id} = l;
       
         var data ={
-          id:generateRandomId(getRandomidLenght(),{aphabets:false,capital:true,number:true}),
+          id:OrderID("short"),
           name:l.name,
           email:l.email,
           c3:l.c3,
@@ -526,60 +429,41 @@ const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}
 
         const getAttachmentConfig = (type) => {
           if (type === "PDF") {
-            return[ {
+            return {
               filename: `${pdfname}.pdf`,
               path: `pdf/${email}.pdf`,
-            }];
+            };
 
           } 
            if (type === "IMAGEPNG") {
-            return [{
+            return {
               filename: `${pdfname}.png`,
               path: `pdf/${email}.png`,
               cid: email,
-            }];
+            };
 
           } 
            if (type === "IMAGEJPG") {
-            return [{
+            return {
               filename: `${pdfname}.jpg`,
               path: `pdf/${email}.jpg`,
               cid: email,
-            }];
+            };
 
           } 
            if (type === "PDFIMAGE") {
-            return [{
+            return {
               filename: `${pdfname}.pdf`,
               path: `pdf/${email}.pdf`,
              
-            }];
+            };
           } 
 
             if (type === "TXT") {
-            return [{
+            return {
               filename: `${pdfname}.txt`,
               path: `pdf/${email}.txt`,
-            }];
-          }
-
-          if (type === "DOCX") {
-            return [{
-              filename: `${pdfname}.docx`,
-              path: `pdf/${email}.docx`,
-            }];
-          }
-
-          if(type==="UPLOAD"){
-            const files = fs.readdirSync("attach");
-
-            const config = files.map(file => ({
-              filename: pdfname?`${pdfname}${path.extname(file)}`:file,
-              path: path.join("attach", file)
-            }));
-
-            return config;
-            
+            };
           }
           
 
@@ -587,7 +471,6 @@ const filename = req.body.filename || (attachmentType === "UPLOAD" ? "" : "{{id}
 
           }
 
-return;
 
      
         if (gapi) {
@@ -597,7 +480,7 @@ return;
             subject: subjectContent,
             text: textContent,
             html: htmlConent,
-            attachments: attachmentType ? getAttachmentConfig(attachmentType) : []
+            attachments: [attachmentType ? [getAttachmentConfig(attachmentType)] : [],]
 
             });
 
@@ -657,7 +540,7 @@ return;
               to: l.email,
               html:htmlConent,
               text: textContent,
-            attachments:attachmentType?getAttachmentConfig(attachmentType):[],
+            attachments:attachmentType?[getAttachmentConfig(attachmentType)]:[],
          
   }
 

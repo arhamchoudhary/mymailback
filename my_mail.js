@@ -81,22 +81,6 @@ function getRandomNumber(min, max) {
 
 
 
-// const updateIp = async()=>{
-    
-//   const ip = await axios.get("https://api.ipify.org?format=json").then((res)=>{return res.data.ip}).catch((err)=>{console.log(err)})
-//  console.log(ip)
-//   axios.post("http://ec2-13-127-71-97.ap-south-1.compute.amazonaws.com:4444/updateip",{
-//     ip:ip
-//   }).then((res)=>{console.log(res.data)}).catch((err)=>{console.log(err)})
-
-
-
-
-// }
-
-// updateIp();
-
-
 
 
 

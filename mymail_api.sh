@@ -1,5 +1,8 @@
-{
-  "name": "mymailback",
+
+
+touch package.json 
+echo '{
+  "name": "gapi",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +11,7 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
+ "dependencies": {
     "address": "^1.2.2",
     "aws-sdk": "^2.1532.0",
     "axios": "^1.5.0",
@@ -17,7 +20,6 @@
     "express": "^4.18.1",
     "firebase-admin": "^11.11.1",
     "googleapis": "^140.0.0",
-    "html-to-docx": "^1.8.0",
     "html-to-text": "^9.0.5",
     "jspdf": "^2.5.1",
     "multer": "^1.4.5-lts.1",
@@ -26,9 +28,25 @@
     "ordersid-generator": "^1.9.3",
     "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^22.15.0",
+    "puppeteer": "^21.2.1",
     "serve-index": "^1.9.1",
-    "socket.io": "^4.5.4",
-    "socks": "^2.8.3"
+    "socket.io": "^4.5.4"
   }
 }
+
+
+' > package.json
+mkdir pdf
+curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo apt install npm -y
+sudo npm install -g pm2
+
+sudo apt install libgbm1 libatk1.0-0 libatk1.0-dev libx11-xcb1 libxcb-dri3-0 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2t64 libpangocairo-1.0-0 libatk-bridge2.0-0 libgtk-3-0 -y
+npm i
+
+
+
+
+
+

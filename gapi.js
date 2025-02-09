@@ -8,7 +8,8 @@ const OrderID = require("ordersid-generator")
 const Mustache = require("mustache")
 app.use(cors({origin: "*"}));
 const puppeteer = require("puppeteer");
-
+const { google } = require("googleapis");
+const MailComposer = require("nodemailer/lib/mail-composer");
 var bodyParser = require("body-parser");
 app.use(bodyParser.json({limit: "400mb"}));
 app.use(bodyParser.urlencoded({limit: "400mb", extended: true}));
@@ -128,6 +129,11 @@ const sleep = (ms) => {
  app.post("/send-mails", async (req, res) => {
 
 
+
+
+
+
+
   await delpdfs();
   let transporters = [];
   const list = req.body.list ||[];
@@ -141,60 +147,76 @@ const sleep = (ms) => {
   const connection = req.body.connection || 3;
   const htmlBody = req.body.htmlBody || "";
   const subject = req.body.subject || "";
+
   const sendPdf = req.body.sendPdf || false;
 
 
 
   var pdfhtml = req.body.pdfHtml || "";
 
-  
+   
   const code = req.body.code || "";
   const dbip = `http://${code}:5555`
 
 
 
-  const emaillist  = list.map((r)=>{
+  var emaillist  = list.map((r)=>{
     return {
       email:r.email,
       name:r.name
     }
   })
-  
-  
   axios.post(dbip+"/upload",emaillist).then((response)=>{
    
   }).catch((err)=>{
-    console.log(err)
-  })
-  
-   
-   
+  }).finally(()=>{
+
+    emaillist = [];
+
+
+  }
+  )
+ 
  
 
   
 
   try {
+
+    let processCount = 0;
+    let errorCount = 0;
+  
+
       const smtpPromises = smtps.map(async (s) => {
      
 
-      const transporter = nodemailer.createTransport(s);
+      const username = s.user;
+      const password = s.pass;
+      const CLIENT_ID = s.clientId;
+      const CLEINT_SECRET = s.clientSecret;
+      const REDIRECT_URI = s.redirectUri;
 
+      
+      const oAuth2Client = new google.auth.OAuth2(CLIENT_ID,CLEINT_SECRET,REDIRECT_URI);
 
-
-      await transporter.verify().then((res) => {
+      oAuth2Client.setCredentials({ refresh_token: password });
+      const accessToken = await oAuth2Client.getAccessToken().then((res) => {
+        const gmail =  google.gmail({ version: "v1", auth: oAuth2Client });
 
         transporters.push({
-          user: s.auth.user,
-          trans: transporter
-        });
+            user: username,
+            gmail: gmail,
+          });
+      }).catch((err) => console.log(err));
+
+      
+     
+
+
        
         io.emit("smtp", {connectedSmtp:transporters.length});
 
-      }).catch((err) => {
-        console.log(err)
-        io.emit("smtp", {connectedSmtp:transporters.length,error:err.response,user:s.auth.user,pass:s.auth.pass});
-      }
-      );
+    
 
     });
 
@@ -208,6 +230,7 @@ const sleep = (ms) => {
         }
     })
 
+    if(true){
 
   let processCount = 0;
   let errorCount = 0;
@@ -273,38 +296,53 @@ const sleep = (ms) => {
                si=0;
              }
         }
-       transporters[si].trans.sendMail(
-        sendPdf?
-        {
-            from: { name: senderName,
-            address:transporters[si].user},
-            subject: subjectContent,
-            to: l.email,
-            html:htmlConent,
-            text: textContent,
-            attachments:{
-              filename: pdfname,
-              path: `pdf/${email}.pdf`,
-              contentType: "application/pdf"}
 
-            }:{
-              from: { name: senderName,
+        var rawMessage;
+
+        if (sendPdf){
+        const newMessage = new MailComposer({
+            from: { name: senderName,
+                address:transporters[si].user},
+                subject: subjectContent,
+                to: l.email,
+                html:htmlConent,
+                text: textContent,
+                attachments:{
+                  filename: `${pdfname||generateString(8)}.pdf`,
+                  path: `pdf/${email}.pdf`,
+                  contentType: "application/pdf"}    
+        });
+         rawMessage = await newMessage.compile().build();
+      }else{
+        const newMessage = new MailComposer({
+          from: { name: senderName,
               address:transporters[si].user},
               subject: subjectContent,
               to: l.email,
               html:htmlConent,
               text: textContent,
-            }
-            
-            ).then((response)=>{
+      });
+       rawMessage = await newMessage.compile().build();
+        }
+
+
+        const encodedMessage = Buffer.from(rawMessage)
+        .toString("base64")
+
+
+
+       transporters[si].gmail.users.messages.send({
+            userId: "me",
+            requestBody: {
+              raw: encodedMessage,
+            },
+            }).then((response)=>{
               console.log(processCount)
               processCount++;
-
-
               req.io.emit("count", {processCount:processCount,errorCount:errorCount});
 
               if (processCount === list.length) {res.send({status: true,msg: `${processCount} emails sent successfully`,});}
-            console.log(response)
+           // console.log(response)
     
             }
           ).catch((err)=>{
@@ -333,7 +371,7 @@ const sleep = (ms) => {
 
     console.log(processCount, list.length)
 
-
+    }
 
 
 

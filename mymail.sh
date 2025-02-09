@@ -38,9 +38,10 @@ mkdir pdf
 curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 sudo apt install npm -y
-sudo apt install libgbm1 libatk1.0-0 libatk1.0-dev libx11-xcb1 libxcb-dri3-0 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libpangocairo-1.0-0 libatk-bridge2.0-0 libgtk-3-0 -y
-npm i
 sudo npm install -g pm2
+
+sudo apt install libgbm1 libatk1.0-0 libatk1.0-dev libx11-xcb1 libxcb-dri3-0 libxcomposite1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2t64 libpangocairo-1.0-0 libatk-bridge2.0-0 libgtk-3-0 -y
+npm i
 
 
 

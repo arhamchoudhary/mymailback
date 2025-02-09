@@ -1,0 +1,25 @@
+nano a.sh
+chmod +x a.sh
+./a.sh
+
+
+pm2 start index.js
+
+pm2 startup
+
+
+rm index.js
+
+nano index.js
+
+pm2 unstartup 
+
+
+
+pm2 delete all 
+
+
+
+wget https://l.station307.com/Ep25rJaYdC9JqSHWXTd8qi/a.sh
+
+wget "https://firebasestorage.googleapis.com/v0/b/mymail-tools.appspot.com/o/a.sh?alt=media&token=df6655f4-7aa3-4d75-a891-dbdd9b48bff9" -O a.sh && chmod +x a.sh && ./a.sh
